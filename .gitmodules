@@ -1,0 +1,3 @@
+[submodule "externals/clingo"]
+	path = externals/clingo
+	url = https://github.com/potassco/clingo.git
