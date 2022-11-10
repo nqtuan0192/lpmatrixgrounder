@@ -96,11 +96,18 @@ class ClingoGrounder {
    public:
     ClingoGrounder();
     void input_files(std::initializer_list<std::string> listof_files);
+    void input_files(const char** files, size_t no_files);
     void ground();
     // private:
     Clingo::Logger logger_;
     Clingo::Control ctl_;
     ClingoObserver obs_;
 };
+
+
+extern "C" {
+    const char* ground_single(const char* filename);
+    const char* ground_list(const char** files, size_t no_files);
+}
 
 #endif  //LPMATRIXGROUNDER_LIBRARY_H

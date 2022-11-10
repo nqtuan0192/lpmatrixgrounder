@@ -93,6 +93,58 @@ void ClingoGrounder::input_files(std::initializer_list<std::string> listof_files
     }
 }
 
+void ClingoGrounder::input_files(const char** files, size_t no_files) {
+    std::string line;
+    for (size_t i = 0; i < no_files; ++i) {
+        std::cout << "Reading file " << files[i] << std::endl;
+        std::ifstream ifile(files[i]);
+        while (std::getline(ifile, line)) {
+            this->ctl_.add("base", {}, line.c_str());
+        }
+        ifile.close();
+    }
+}
+
 void ClingoGrounder::ground() {
     this->ctl_.ground({{"base", {}}});
+}
+
+
+const char* ground_return(ClingoGrounder& cgrounder) {
+    cgrounder.ground();
+    std::stringstream ss;
+    for (auto statement : cgrounder.obs_.rule_statements_) {
+        ss << statement << std::endl;
+    }
+    for (auto statement : cgrounder.obs_.output_statements_) {
+        ss << statement << std::endl;
+    }
+    std::cout << ss.str().c_str();
+    
+    // return ss.str().c_str(); does not work
+    const std::string my_str = ss.str();
+    auto len = my_str.length();
+    char* cstr = new char[len-1];
+    strcpy(cstr, my_str.c_str());
+    return cstr;
+}
+
+const char* ground_single(const char* filename) {
+    std::cout << "Grounding " << filename << " ..." << std::endl;
+
+    ClingoGrounder cgrounder = ClingoGrounder();
+    cgrounder.input_files({filename});
+    return ground_return(cgrounder);
+}
+
+const char* ground_list(const char** files, size_t no_files) {
+    std::cout << "Grounding ";
+    for (size_t i = 0; i < no_files; ++i) {
+        std::cout << files[i] << " ";
+    }
+    std::cout << " ..." << std::endl;
+
+    ClingoGrounder cgrounder = ClingoGrounder();
+    cgrounder.input_files(files, no_files);
+    return ground_return(cgrounder);
 }
