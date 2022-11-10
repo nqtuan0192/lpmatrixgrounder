@@ -5,17 +5,17 @@ if(NOT CMAKE_BUILD_TYPE)
 endif()
 
 set(CMAKE_CXX_FLAGS "-Wall -Wextra")
-set(CMAKE_CXX_FLAGS_DEBUG "-g")
-set(CMAKE_CXX_FLAGS_RELEASE "-O3")
+set(CMAKE_CXX_FLAGS_DEBUG "-g -Og")
+set(CMAKE_CXX_FLAGS_RELEASE "-march=native -O3 -pipe")
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 
 include(CTest)
 enable_testing()
 
-add_executable(${PROJECT_NAME} 
-    src/main.cpp 
-    src/lpmatrixgrounder.cpp
+add_library(${PROJECT_NAME} SHARED
+  src/lpmatrixgrounder.cpp
 )
+
 target_compile_features(${PROJECT_NAME} PUBLIC cxx_std_17)
 
 set(CPACK_PROJECT_NAME ${PROJECT_NAME})
@@ -38,4 +38,15 @@ target_link_directories(${PROJECT_NAME}
 target_link_libraries(${PROJECT_NAME}
 PUBLIC
   libclingo
+)
+
+
+# a testing prgram for the lib
+add_executable(testlpmatrixgrounder
+    src/main.cpp 
+)
+target_link_libraries(testlpmatrixgrounder
+PUBLIC
+  libclingo
+  ${PROJECT_NAME}
 )
