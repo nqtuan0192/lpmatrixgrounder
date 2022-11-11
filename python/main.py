@@ -3,10 +3,11 @@ import re
 import argparse
 import copy
 import time
+import os
 from bidict import bidict
 from scipy import sparse
 import numpy as np
-
+import pandas as pd
 
 NEWATOM_PREFIX = "x_"
 KW_FACT = "FACT"
@@ -56,8 +57,8 @@ def remapAtoms(atoms_mapping, atoms_mapping_negations, atoms_mapping_newatom):
 class grounder_ret(ctypes.Structure):
     _fields_ = [
         ("rawdata", ctypes.c_char_p),
-        ("duration_clingo", ctypes.c_int),
-        ("duration_internal", ctypes.c_int),
+        ("duration_clingo", ctypes.c_float),
+        ("duration_internal", ctypes.c_float),
     ]
 
 
@@ -69,12 +70,16 @@ def groundUsingClingo(filenames):
     aspif = ret_data.rawdata
     # print(aspif)
     rawdata = aspif.decode("utf-8").split("\n")
-    return hande_aspif(rawdata), \
-        float(ret_data.duration_clingo * 10**-9), \
-        float(ret_data.duration_internal * 10**-9)
+    start_time = time.time()
+    ret = handle_aspif(rawdata)
+    duration = time.time() - start_time
+    return ret, duration, \
+        ret_data.duration_clingo, \
+        ret_data.duration_internal
+        
 
 
-def hande_aspif(rawdata):
+def handle_aspif(rawdata):
     # rules = dict()
     rules_mapped = dict()
     # {0: ('OR', [...]), 1: ('FACT', [...]), 4: ('AND', [...]), 5: ('AND', [...])}
@@ -150,7 +155,7 @@ def hande_aspif(rawdata):
             if body != newbody:
                 rules_mapped[head][1][idx] = newbody
 
-    return rules_mapped, introduced_atoms_counter + len(atoms_negation), atoms_negation_mapped
+    return rules_mapped, atoms_max, introduced_atoms_counter + len(atoms_negation), atoms_negation_mapped
 
 
 def buildMatrixMapped(rules, n_atoms, atoms_negation):
@@ -205,7 +210,7 @@ def buildMatrixMapped_sparsefast(rules, n_atoms, atoms_negation):
         nnz = nnz + 1
     ms = sparse.coo_matrix((pre_val[: nnz], (pre_row[: nnz], pre_col[: nnz])), shape=(
         n_atoms, n_atoms)).tocsr()
-    return ms
+    return ms, nnz
 
 
 def buildMatrixMapped_sparse(rules, n_atoms, atoms_negation):
@@ -236,45 +241,98 @@ def buildMatrixMapped_sparse(rules, n_atoms, atoms_negation):
     return ms
 
 
-def main():
+def main2():
     parser = argparse.ArgumentParser(description='LP Matrix Grounder')
     parser.add_argument('--input', help='Input file',
                         type=argparse.FileType('r'), nargs='+')
     parser.add_argument('--output', help='Output file')
-
     args = parser.parse_args()
-
     inputfiles = args.input
     outputfile = args.output
+    conductExperiment([f.name for f in inputfiles])
 
+
+def conductExperiment(inputfiles):
     start_time = time.time()
-    (rules, n_atoms, atoms_negation), duration_clingo, duration_internal = groundUsingClingo(
-        [f.name for f in inputfiles])
-    executation_time = time.time() - start_time
-    print("Grounding time              :", executation_time)
+    (rules, n_atoms_original, n_atoms,
+     atoms_negation), duration_handle, duration_clingo, duration_internal = groundUsingClingo(inputfiles)
+    executation_groundtime = time.time() - start_time
+    print("Grounding time              :", executation_groundtime)
     print("---- duration_clingo        :", duration_clingo)
     print("---- duration_internal      :", duration_internal)
-    print("---- overhead               :", executation_time -
-          duration_clingo - duration_internal)
+    print("---- duration_handle        :", duration_handle)
+    print("---- overhead               :", executation_groundtime -
+          duration_clingo - duration_internal - duration_handle)
     # print(rules)
 
     start_time = time.time()
-    mp = buildMatrixMapped(rules, n_atoms, atoms_negation)
-    executation_time = time.time() - start_time
-    print("Building dense matrix time  :", executation_time)
-    # print(mp)
+    try:
+        mp = buildMatrixMapped(rules, n_atoms, atoms_negation)
+        executation_densematrix_time = time.time() - start_time
+        print("Building dense matrix time  :", executation_densematrix_time)
+        print(mp)
+    except np.core._exceptions._ArrayMemoryError:
+        print("Unable to allocate an array with shape (%d, %d) and data type float64" % (
+            n_atoms, n_atoms))
+        executation_densematrix_time = "NA"
 
     start_time = time.time()
     ms = buildMatrixMapped_sparse(rules, n_atoms, atoms_negation)
-    executation_time = time.time() - start_time
-    print("Building sparse matrix time :", executation_time)
+    executation_sparsematrix_time = time.time() - start_time
+    print("Building sparse matrix time :", executation_sparsematrix_time)
     # print(ms)
 
     start_time = time.time()
-    ms = buildMatrixMapped_sparsefast(rules, n_atoms, atoms_negation)
-    executation_time = time.time() - start_time
-    print("Building fast sparse time   :", executation_time)
+    ms, nnz = buildMatrixMapped_sparsefast(rules, n_atoms, atoms_negation)
+    executation_sparsematrixfast_time = time.time() - start_time
+    print("Building fast sparse time   :", executation_sparsematrixfast_time)
     # print(ms)
+
+    dataset = "name"
+    no_rules = len(rules)
+    no_atoms = n_atoms_original
+    no_negations = len(atoms_negation)
+    matrix_size = n_atoms
+    nnz = nnz
+    sparsity = 1.0 - nnz / (matrix_size * matrix_size)
+    dense_size = matrix_size * matrix_size * 4
+    sparse_size = (len(ms.indices) + len(ms.indptr) + len(ms.data)) * 4
+    clingo_time = duration_clingo
+    internal_time = duration_internal
+    handling_time = duration_handle
+    grounding_time = executation_groundtime
+    dense_matrix_time = executation_densematrix_time
+    sparse_matrix_time = executation_sparsematrix_time
+    sparse_matrix_fast_time = executation_sparsematrixfast_time
+
+    return dataset, no_rules, no_atoms, no_negations, \
+        matrix_size, nnz, sparsity, dense_size, sparse_size, \
+        clingo_time, internal_time, handling_time, grounding_time, \
+        dense_matrix_time, sparse_matrix_time, sparse_matrix_fast_time
+
+
+def main():
+    df = pd.DataFrame(columns=['dataset', 'no_rules', 'no_atoms', 'no_negations',
+                               'matrix_size', 'nnz', 'sparsity', 'dense_size', 'sparse_size',
+                               'clingo_time', 'internal_time', 'handling_time', 'grounding_time',
+                               'dense_matrix_time', 'sparse_matrix_time', 'sparse_matrix_fast_time'])
+    datasets = dict({"3-Coloring": ("../experiments/datasets/", "3Coloring-Clasp.txt", "instances"),
+                     "HamiltonianCycle": ("../experiments/datasets/", "HamiltonianCycle-Clasp.txt", "instances"),
+                     "LatinSquares": ("../experiments/datasets/", "LatinSquares-Clasp.txt", "instances"),
+                     "NQueens": ("../experiments/datasets/", "queens-Clasp.txt", "instances"),
+                     "TransitiveClosure": ("../experiments/datasets/", "Reachability-Clasp.txt", "instances")
+                     })
+    for dataname, (basedir, modelfile, instancedir) in datasets.items():
+        modelfile = os.path.join(basedir, dataname, modelfile)
+        instancedir = os.path.join(basedir, dataname, instancedir)
+        for (dirpath, dirnames, filenames) in os.walk(instancedir):
+            for file in filenames:
+                instancefile = os.path.join(dirpath, file)
+                print("--- Processing:", modelfile, instancefile, "...")
+                idx = len(df.index)
+                df.loc[idx] = conductExperiment([modelfile, instancefile])
+                df.iloc[idx, df.columns.get_loc('dataset')] = os.path.join(dataname, file)
+                df.to_csv("results.csv", float_format='%.12f')
 
 
 if __name__ == "__main__":

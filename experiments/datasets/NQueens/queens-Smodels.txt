@@ -1,0 +1,22 @@
+%%
+%% An optimal encoding for N-queens problem
+%%
+%% num(N) - available symbols and implicit square dimension
+
+num(1..n).
+
+% Each row has exactly one queen	
+1{ queen(R,C) : num(C) } 1 :- num(R).
+
+% Each column has exactly one queen
+1{ queen(R,C) : num(R) } 1 :- num(C).
+
+% Each ascending diagonal has at most one queen
+{ queen(R+I-1, I) : num(I;R+I-1) } 1 :- num(R).
+{ queen(R-I+1, I) : num(I;R-I+1) } 1 :- num(R).
+
+% Each descending diagonal has at most one queen
+{ queen(I, C+I-1) : num(I;C+I-1) } 1 :- num(C).
+{ queen(n-I+1, C+I-1) : num(I;n-I+1;C+I-1) } 1 :- num(C).
+
+

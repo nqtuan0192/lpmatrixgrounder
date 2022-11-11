@@ -1,0 +1,8 @@
+hc(X,Y) << edge(X,Y).
+<= hc(X,Y),hc(X,Z), Y!=Z .
+<= hc(X,Y),hc(Z,Y), X!=Z.
+reached(X) <- hc(Y,X).
+reached(X) <= node(X).
+reached_start(X) <- start(Y), hc(Y,X).
+reached_start(X) <- reached_start(Y), hc(Y,X).
+reached_start(X) <= node(X).

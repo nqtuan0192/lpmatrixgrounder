@@ -1,0 +1,4 @@
+(+)C queen(R,C) <- num(R), num(C).
+<= queen(R,C), queen(T,C), R!=T.
+<= queen(R,C), queen(T,V), R!=T, R+C==T+V.
+<= queen(R,C), queen(T,V), R!=T, R-C==T-V.

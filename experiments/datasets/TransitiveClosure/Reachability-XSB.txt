@@ -1,0 +1,10 @@
+% a graph is encoded as facts node(.) and edge(.,.)
+
+:- table path/2.
+path(X,Y) :- edge(X,Y).
+path(X,Y) :- edge(X,Z), path(Z,Y).
+% add your database here
+?-path(X,Y),write(X),write('-'),write(Y),write(' '),fail.
+
+
+

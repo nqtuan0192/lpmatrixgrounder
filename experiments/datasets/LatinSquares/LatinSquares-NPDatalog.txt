@@ -1,0 +1,4 @@
+(+)V square(R,C,V) <- num(R), num(C), num(V).
+<= square(R,X,V), square(R,Y,V), X!=Y.
+<= square(X,C,V), square(Y,C,V), X!=Y.
+square(R,C,V) <= preassigned(R,C,V).

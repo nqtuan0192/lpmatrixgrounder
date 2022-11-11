@@ -1,0 +1,20 @@
+using CP;
+
+{int} num = ... ;
+int card_num = card(num);
+range int_num = 1..card_num;
+dvar int queen[int_num]in int_num;
+
+subject to{
+	forall(x2 in int_num, x0 in int_num: x0!=x2){
+		(1*(queen[x2]==queen[x0])*1)>0 => false;
+	}
+	forall(L0 in int_num, L1 in int_num, x2 in int_num, x0 in int_num: x0+L0==x2+L1 && x0!=x2){
+		((queen[x0]==L0)*(queen[x2]==L1)*1*1)>0 => false;
+	}
+	forall(L0 in int_num, L1 in int_num, x2 in int_num, x0 in int_num: x0-L0==x2-L1 && x0!=x2){
+		((queen[x0]==L0)*(queen[x2]==L1)*1*1)>0 => false;
+	}
+};
+
+

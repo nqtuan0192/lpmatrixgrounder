@@ -1,0 +1,8 @@
+% requires the graph as facts node(.) and edge(.,.)
+
+colored(X,r) v colored(X,g) v colored(X,b) :- node(X).
+
+:- edge(X,Y), colored(X,C), colored(Y,C).
+
+
+

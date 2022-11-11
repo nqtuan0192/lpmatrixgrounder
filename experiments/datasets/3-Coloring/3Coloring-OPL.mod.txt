@@ -1,0 +1,18 @@
+using CP;
+
+{string} node = ... ;
+tuple edge_type {string edge_0;string edge_1;};
+{edge_type}edge = ... ;
+{string} color = ... ;
+int card_color = card(color);
+range int_color = 1..card_color;
+dvar int col[node] in int_color;
+
+
+subject to{
+	forall(<x0,x1> in edge){
+		(1*(col[x0]==col[x1])*1)>0 => false;
+	}
+};
+
+

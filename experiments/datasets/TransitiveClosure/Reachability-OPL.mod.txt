@@ -1,0 +1,25 @@
+using CP;
+
+{string} node = ... ;
+tuple edge_type {string edge_0;string edge_1;};
+{edge_type}edge = ... ;
+int tc[node][node];
+execute{
+	for (var x0 in edge){
+		tc[x0.edge_0][x0.edge_1]=1;
+	}
+	var modified0=true;
+	while(modified0){
+		modified0=false;
+		for (var x1 in edge){
+			for (var x2 in node){
+				if(tc[x1.edge_1][x2]==1 && tc[x1.edge_0][x2]==0){
+					tc[x1.edge_0][x2]=1;
+					modified0=true;
+				}
+			}
+		}
+	}
+}
+
+

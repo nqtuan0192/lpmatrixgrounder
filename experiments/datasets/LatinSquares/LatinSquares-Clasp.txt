@@ -1,0 +1,19 @@
+% num(N) - available symbols and implicit square dimension
+% preassigned(R,C,V) - field (row R, column C) with predetermined symbol V
+
+% Each block has exactly one value
+ 	{ square(R,C,V) }  :- num(R;C;V).
+ 	:- 2{ square(R,C,V) : num(V) }  , num(R;C).
+ 	:- { square(R,C,V) : num(V) }0  , num(R;C).
+
+% Each value occurs exactly once in each row
+ 	:- 2{ square(R,C,V) : num(C) }, num(R;V).
+	:- { square(R,C,V) : num(C) }0 , num(R;V).
+
+% Each value occurs exactly once in each column
+ 	:- 2 { square(R,C,V) : num(R) }, num(C;V).
+ 	:- { square(R,C,V) : num(R) } 0, num(C;V).
+
+% Assignment of the pre-assigned blocks
+ 	square(R,C,V) :- preassigned(R,C,V).
+

@@ -1,0 +1,15 @@
+% Disjunctive encoding for Hamiltonian Cycle.
+% 
+% The input graph is to be encoded in the predicate edge/2;
+% the starting node in the predicate start/1.
+
+reached(X) :- in_hm(_,X).
+
+in_hm(X,Y) v out_hm(X,Y) :- start(X), edge(X,Y).
+in_hm(X,Y) v out_hm(X,Y) :- reached(X), edge(X,Y).
+
+:- node(X), not #count{ Y: in_hm(X,Y)} = 1. 
+:- node(Y), not #count{ X: in_hm(X,Y)} = 1.
+
+:- node(X), not reached(X).
+

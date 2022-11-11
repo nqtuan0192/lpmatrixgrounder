@@ -1,0 +1,13 @@
+% requires the graph as facts node(.) and edge(.,.)
+
+colored(X,r) v colored(X,g) v colored(X,b) v colored(X,y) :- node(X).
+used(I)  :-  colored(X,I). 
+
+:- edge(X,Y), colored(X,C), colored(Y,C).
+
+:~ used(I).
+
+
+
+
+

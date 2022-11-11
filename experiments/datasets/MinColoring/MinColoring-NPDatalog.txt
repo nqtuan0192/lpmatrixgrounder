@@ -1,0 +1,3 @@
+(+)C col(X,C) <- node(X), color(C).
+<= edge(X,Y), col(X,C), col(Y,C).
+usedColor(X) <- col(Y,X).

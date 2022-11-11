@@ -1,0 +1,15 @@
+% c-colorability by Ilkka Niemelä 
+%
+% requires the graph as facts node(.) and edge(.,.)
+
+% Facts color(V,C) in the stable model provide a coloring of the graph. 
+
+color(V,C):-  node(V), col(C), not othercolor(V,C).
+
+othercolor(V,C) :- node(V), col(C),  col(C1), C != C1,  color(V,C1).
+
+:- edge(V1,V2), col(C), color(V1,C), color(V2,C).
+
+
+col(1..3).
+

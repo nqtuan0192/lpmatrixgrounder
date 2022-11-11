@@ -1,0 +1,17 @@
+% num(N) - available symbols and implicit square dimension
+% preassigned(R,C,V) - field (row R, column C) with predetermined symbol V
+
+square(R,C,V) :- not no_square(R,C,V), num(R;C;V).
+no_square(R,C,V) :- not square(R,C,V), num(R;C;V).
+square(R,C,V) :- preassigned(R,C,V).
+
+assigned(R,C) :- square(R,C,V), num(R;C;V).
+:- not assigned(R,C), num(R;C).
+
+:- num(R;C;V1;V2), V1!=V2, square(R,C,V1), square(R,C,V2).
+
+:- num(R;C1;C2;V), C1!=C2, square(R,C1,V), square(R,C2,V).
+
+:- num(R1;R2;C;V), R1!=R2, square(R1,C,V), square(R2,C,V).
+
+

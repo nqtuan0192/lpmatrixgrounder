@@ -1,0 +1,21 @@
+%%  Hamilton cycle problem 
+%%  The graph is given as facts "node(X)." and "edge(X,Y)."
+%%  One node v is given as initial node "start(v)." 
+%%  The key predicate is "hc". Atom "hc(X,Y)" represents the fact 
+%%  that edge (X,Y) is in the Hamiltonian cycle to be constructed. 
+
+% Select edges for the cycle
+{ hc(X,Y) } :- edge(X,Y).
+
+% Each node has at most one incoming edge in a cycle
+:- 2 { hc(X,Y):edge(X,Y) }, node(Y).
+
+% Each node has at most one outgoing edge in a cycle
+:- 2 { hc(X,Y):edge(X,Y) }, node(X).
+
+% Every node must be reachable from the initial node through chosen
+% hc(v,u) edges
+:- node(X), not r(X).
+
+r(Y) :- hc(X,Y), edge(X,Y), start(X).
+r(Y) :- hc(X,Y), edge(X,Y), r(X), not start(X).

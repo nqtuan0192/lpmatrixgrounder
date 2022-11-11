@@ -1,0 +1,2 @@
+tc(X,Y) <- edge(X,Y).
+tc(X,Y) <- edge(X,Z), tc(Z,Y).
