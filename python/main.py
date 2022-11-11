@@ -60,6 +60,7 @@ class grounder_ret(ctypes.Structure):
         ("duration_internal", ctypes.c_int),
     ]
 
+
 def groundUsingClingo(filenames):
     C_LPMAT.ground_list.argtypes = [
         ctypes.POINTER(ctypes.c_char_p), ctypes.c_size_t]
@@ -68,7 +69,9 @@ def groundUsingClingo(filenames):
     aspif = ret_data.rawdata
     # print(aspif)
     rawdata = aspif.decode("utf-8").split("\n")
-    return hande_aspif(rawdata), float(ret_data.duration_clingo * 10**-9), float(ret_data.duration_internal * 10**-9)
+    return hande_aspif(rawdata), \
+        float(ret_data.duration_clingo * 10**-9), \
+        float(ret_data.duration_internal * 10**-9)
 
 
 def hande_aspif(rawdata):
@@ -167,9 +170,12 @@ def buildMatrixMapped(rules, n_atoms, atoms_negation):
         mp[neg, neg] = 1.0
     return mp
 
+
 pre_row = np.empty(100_000_000, dtype=np.int32)
 pre_col = np.empty(100_000_000, dtype=np.int32)
 pre_val = np.empty(100_000_000, dtype=float)
+
+
 def buildMatrixMapped_sparsefast(rules, n_atoms, atoms_negation):
     nnz = 0
     for h, (ruletype, rulebodies) in rules.items():
@@ -200,6 +206,7 @@ def buildMatrixMapped_sparsefast(rules, n_atoms, atoms_negation):
     ms = sparse.coo_matrix((pre_val[: nnz], (pre_row[: nnz], pre_col[: nnz])), shape=(
         n_atoms, n_atoms)).tocsr()
     return ms
+
 
 def buildMatrixMapped_sparse(rules, n_atoms, atoms_negation):
     row, col, val = [], [], []
@@ -247,7 +254,8 @@ def main():
     print("Grounding time              :", executation_time)
     print("---- duration_clingo        :", duration_clingo)
     print("---- duration_internal      :", duration_internal)
-    print("---- overhead               :", executation_time - duration_clingo - duration_internal)
+    print("---- overhead               :", executation_time -
+          duration_clingo - duration_internal)
     # print(rules)
 
     start_time = time.time()

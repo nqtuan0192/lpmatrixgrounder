@@ -129,12 +129,11 @@ std::ostream& operator<<(std::ostream& os,
 void printRule(std::vector<int> rule);
 void printRules(std::vector<std::vector<int>> rules);
 
-
 struct struct_ground_ret {
-    const char* rawdata;
-    int duration_clingo;
-    int duration_internal;
-} ;
+  const char* rawdata;
+  int duration_clingo;
+  int duration_internal;
+};
 
 extern "C" {
 struct_ground_ret ground_single(const char* filename);

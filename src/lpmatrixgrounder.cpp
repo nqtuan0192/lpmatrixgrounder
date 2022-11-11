@@ -158,8 +158,8 @@ struct_ground_ret ground_return(ClingoGrounder& cgrounder) {
   auto start = std::chrono::high_resolution_clock::now();
   cgrounder.ground();
   auto duration_clingo = std::chrono::high_resolution_clock::now() - start;
-//   std::cout << "Clingo grounding time = " << duration_clingo.count()
-//             << std::endl;
+  //   std::cout << "Clingo grounding time = " << duration_clingo.count()
+  //             << std::endl;
   // std::stringstream ss;
   // for (auto statement : cgrounder.obs_.rule_statements_) {
   //     ss << statement << std::endl;
@@ -275,7 +275,7 @@ struct_ground_ret ground_return(ClingoGrounder& cgrounder) {
   char* cstr = new char[len - 1];
   strcpy(cstr, my_str.c_str());
   auto duration = std::chrono::high_resolution_clock::now() - start;
-//   std::cout << "Converting time = " << duration.count() << std::endl;
+  // std::cout << "Converting time = " << duration.count() << std::endl;
 
   struct_ground_ret ret;
   ret.rawdata = cstr;
