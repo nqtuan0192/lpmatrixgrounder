@@ -127,13 +127,15 @@ void ClingoGrounder::input_files(const char** files, size_t no_files) {
 void ClingoGrounder::ground() { this->ctl_.ground({{"base", {}}}); }
 
 std::ostream& operator<<(std::ostream& os, std::vector<int>& rule) {
-  os << rule[LPI_IDX::RULE_HEAD] << " <= ";
+  os << rule[LPI_IDX::RULE_HEAD];
   if (rule.size() > LPI_IDX::RULE_BODY) {
+    os << " <= ";
     for (uint32_t i = LPI_IDX::RULE_BODY; i < rule.size() - 1; ++i) {
       os << rule[i] << ", ";
     }
-    os << rule[rule.size() - 1] << ".";
+    os << rule[rule.size() - 1];
   }
+  os << ".";
   return os;
 }
 
@@ -152,12 +154,12 @@ void printRule(std::vector<int> rule) {
 
 void printRules(std::vector<std::vector<int>> rules) { std::cout << rules; }
 
-const char* ground_return(ClingoGrounder& cgrounder) {
+struct_ground_ret ground_return(ClingoGrounder& cgrounder) {
   auto start = std::chrono::high_resolution_clock::now();
   cgrounder.ground();
   auto duration_clingo = std::chrono::high_resolution_clock::now() - start;
-  std::cout << "Clingo grounding time = " << duration_clingo.count()
-            << std::endl;
+//   std::cout << "Clingo grounding time = " << duration_clingo.count()
+//             << std::endl;
   // std::stringstream ss;
   // for (auto statement : cgrounder.obs_.rule_statements_) {
   //     ss << statement << std::endl;
@@ -273,11 +275,17 @@ const char* ground_return(ClingoGrounder& cgrounder) {
   char* cstr = new char[len - 1];
   strcpy(cstr, my_str.c_str());
   auto duration = std::chrono::high_resolution_clock::now() - start;
-  std::cout << "Converting time = " << duration.count() << std::endl;
-  return cstr;
+//   std::cout << "Converting time = " << duration.count() << std::endl;
+
+  struct_ground_ret ret;
+  ret.rawdata = cstr;
+  ret.duration_clingo = duration_clingo.count();
+  ret.duration_internal = duration.count();
+
+  return ret;
 }
 
-const char* ground_single(const char* filename) {
+struct_ground_ret ground_single(const char* filename) {
   // std::cout << "Grounding " << filename << " ..." << std::endl;
 
   ClingoGrounder cgrounder = ClingoGrounder();
@@ -285,7 +293,7 @@ const char* ground_single(const char* filename) {
   return ground_return(cgrounder);
 }
 
-const char* ground_list(const char** files, size_t no_files) {
+struct_ground_ret ground_list(const char** files, size_t no_files) {
   // std::cout << "Grounding ";
   // for (size_t i = 0; i < no_files; ++i) {
   //     std::cout << files[i] << " ";

@@ -129,9 +129,16 @@ std::ostream& operator<<(std::ostream& os,
 void printRule(std::vector<int> rule);
 void printRules(std::vector<std::vector<int>> rules);
 
+
+struct struct_ground_ret {
+    const char* rawdata;
+    int duration_clingo;
+    int duration_internal;
+} ;
+
 extern "C" {
-const char* ground_single(const char* filename);
-const char* ground_list(const char** files, size_t no_files);
+struct_ground_ret ground_single(const char* filename);
+struct_ground_ret ground_list(const char** files, size_t no_files);
 }
 
 #endif  // LPMATRIXGROUNDER_LIBRARY_H
