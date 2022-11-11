@@ -279,8 +279,8 @@ struct_ground_ret ground_return(ClingoGrounder& cgrounder) {
 
   struct_ground_ret ret;
   ret.rawdata = cstr;
-  ret.duration_clingo = duration_clingo.count();
-  ret.duration_internal = duration.count();
+  ret.duration_clingo = std::chrono::duration<float>(duration_clingo).count();
+  ret.duration_internal = std::chrono::duration<float>(duration).count();
 
   return ret;
 }

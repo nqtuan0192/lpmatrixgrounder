@@ -131,8 +131,8 @@ void printRules(std::vector<std::vector<int>> rules);
 
 struct struct_ground_ret {
   const char* rawdata;
-  int duration_clingo;
-  int duration_internal;
+  float duration_clingo;
+  float duration_internal;
 };
 
 extern "C" {
