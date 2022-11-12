@@ -176,9 +176,10 @@ def buildMatrixMapped(rules, n_atoms, atoms_negation):
     return mp
 
 
-pre_row = np.empty(100_000_000, dtype=np.int32)
-pre_col = np.empty(100_000_000, dtype=np.int32)
-pre_val = np.empty(100_000_000, dtype=float)
+ARRAY_SIZE = 1_000_000_000
+pre_row = np.empty(ARRAY_SIZE, dtype=np.int32)
+pre_col = np.empty(ARRAY_SIZE, dtype=np.int32)
+pre_val = np.empty(ARRAY_SIZE, dtype=float)
 
 
 def buildMatrixMapped_sparsefast(rules, n_atoms, atoms_negation):
@@ -288,8 +289,14 @@ def conductExperiment(inputfiles):
     print("Building fast sparse time   :", executation_sparsematrixfast_time)
     # print(ms)
 
-    dataset = "name"
+    avg_array = []
+    for head, (ruletype, rulebodies) in rules.items():
+        for idx, body in enumerate(rulebodies):
+            avg_array.append(len(body))
+
+    dataset = "name"    # will be updated
     no_rules = len(rules)
+    avg_rulelength = np.average(avg_array)
     no_atoms = n_atoms_original
     no_negations = len(atoms_negation)
     matrix_size = n_atoms
@@ -305,14 +312,14 @@ def conductExperiment(inputfiles):
     sparse_matrix_time = executation_sparsematrix_time
     sparse_matrix_fast_time = executation_sparsematrixfast_time
 
-    return dataset, no_rules, no_atoms, no_negations, \
+    return dataset, no_rules, avg_rulelength, no_atoms, no_negations, \
         matrix_size, nnz, sparsity, dense_size, sparse_size, \
         clingo_time, internal_time, handling_time, grounding_time, \
         dense_matrix_time, sparse_matrix_time, sparse_matrix_fast_time
 
 
 def main():
-    df = pd.DataFrame(columns=['dataset', 'no_rules', 'no_atoms', 'no_negations',
+    df = pd.DataFrame(columns=['dataset', 'no_rules', 'avg_rulelength', 'no_atoms', 'no_negations',
                                'matrix_size', 'nnz', 'sparsity', 'dense_size', 'sparse_size',
                                'clingo_time', 'internal_time', 'handling_time', 'grounding_time',
                                'dense_matrix_time', 'sparse_matrix_time', 'sparse_matrix_fast_time'])
@@ -326,7 +333,7 @@ def main():
         modelfile = os.path.join(basedir, dataname, modelfile)
         instancedir = os.path.join(basedir, dataname, instancedir)
         for (dirpath, dirnames, filenames) in os.walk(instancedir):
-            for file in filenames:
+            for file in sorted(filenames):
                 instancefile = os.path.join(dirpath, file)
                 print("--- Processing:", modelfile, instancefile, "...")
                 idx = len(df.index)
@@ -336,4 +343,4 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    main2()
