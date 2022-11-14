@@ -88,10 +88,12 @@ def handle_aspif(rawdata):
     atoms_negation = set()
     atoms_introduced = set()
     atoms_max = 0
+    original_rule_count = 0
     for line in rawdata:
         # print(line)
-        if "<=" not in line or "." not in line:
+        if "." not in line:
             continue
+        original_rule_count += 1
         parts = re.split('<=', line.strip().replace(".", ""))
         head = int(parts[0])
         if head > atoms_max:
@@ -155,7 +157,7 @@ def handle_aspif(rawdata):
             if body != newbody:
                 rules_mapped[head][1][idx] = newbody
 
-    return rules_mapped, atoms_max, introduced_atoms_counter + len(atoms_negation), atoms_negation_mapped
+    return rules_mapped, atoms_max, introduced_atoms_counter + len(atoms_negation), atoms_negation_mapped, original_rule_count
 
 
 def buildMatrixMapped(rules, n_atoms, atoms_negation):
@@ -256,7 +258,7 @@ def main2():
 def conductExperiment(inputfiles):
     start_time = time.time()
     (rules, n_atoms_original, n_atoms,
-     atoms_negation), duration_handle, duration_clingo, duration_internal = groundUsingClingo(inputfiles)
+     atoms_negation, original_rule_count), duration_handle, duration_clingo, duration_internal = groundUsingClingo(inputfiles)
     executation_groundtime = time.time() - start_time
     print("Grounding time              :", executation_groundtime)
     print("---- duration_clingo        :", duration_clingo)
@@ -295,11 +297,12 @@ def conductExperiment(inputfiles):
             avg_array.append(len(body))
 
     dataset = "name"    # will be updated
-    no_rules = len(rules)
-    avg_rulelength = np.average(avg_array)
+    no_rules_original = original_rule_count
     no_atoms = n_atoms_original
     no_negations = len(atoms_negation)
+    no_rules = len(rules)
     matrix_size = n_atoms
+    avg_rulelength = np.average(avg_array)
     nnz = nnz
     sparsity = 1.0 - nnz / (matrix_size * matrix_size)
     dense_size = matrix_size * matrix_size * 4
@@ -312,21 +315,27 @@ def conductExperiment(inputfiles):
     sparse_matrix_time = executation_sparsematrix_time
     sparse_matrix_fast_time = executation_sparsematrixfast_time
 
-    return dataset, no_rules, avg_rulelength, no_atoms, no_negations, \
-        matrix_size, nnz, sparsity, dense_size, sparse_size, \
-        clingo_time, internal_time, handling_time, grounding_time, \
-        dense_matrix_time, sparse_matrix_time, sparse_matrix_fast_time
+    return dataset, no_rules_original, no_atoms, no_negations, \
+        no_rules, matrix_size, avg_rulelength,  \
+        nnz, \
+        clingo_time, internal_time, handling_time, \
+        dense_matrix_time, sparse_matrix_fast_time
+
+
+
+def format_tex(number):
+    return "$\\num{%d}$" % number
 
 
 def main():
-    df = pd.DataFrame(columns=['dataset', 'no_rules', 'avg_rulelength', 'no_atoms', 'no_negations',
-                               'matrix_size', 'nnz', 'sparsity', 'dense_size', 'sparse_size',
-                               'clingo_time', 'internal_time', 'handling_time', 'grounding_time',
-                               'dense_matrix_time', 'sparse_matrix_time', 'sparse_matrix_fast_time'])
+    df = pd.DataFrame(columns=['Data instance', '$m$', '$n$', '$k$', '$m\'$', '$n\'$', '$\overline{l}$', 
+                               '$\eta_z$', 
+                               '$t_{clingo}$', '$t_{int}$', '$t_{alg}$',
+                               '$t_{asg}^{(d)}$', '$t_{asg}^{(s)}$'])
     datasets = dict({"3-Coloring": ("../experiments/datasets/", "3Coloring-Clasp.txt", "instances"),
                      "HamiltonianCycle": ("../experiments/datasets/", "HamiltonianCycle-Clasp.txt", "instances"),
-                     "LatinSquares": ("../experiments/datasets/", "LatinSquares-Clasp.txt", "instances"),
-                     "NQueens": ("../experiments/datasets/", "queens-Clasp.txt", "instances"),
+                    #  "LatinSquares": ("../experiments/datasets/", "LatinSquares-Clasp.txt", "instances"),
+                    #  "NQueens": ("../experiments/datasets/", "queens-Clasp.txt", "instances"),
                      "TransitiveClosure": ("../experiments/datasets/", "Reachability-Clasp.txt", "instances")
                      })
     for dataname, (basedir, modelfile, instancedir) in datasets.items():
@@ -338,9 +347,22 @@ def main():
                 print("--- Processing:", modelfile, instancefile, "...")
                 idx = len(df.index)
                 df.loc[idx] = conductExperiment([modelfile, instancefile])
-                df.iloc[idx, df.columns.get_loc('dataset')] = os.path.join(dataname, file)
+                for col in ["$t_{clingo}$", "$t_{int}$", "$t_{alg}$", "$t_{asg}^{(d)}$", "$t_{asg}^{(s)}$"]:#range(8, 13):
+                    if df.iloc[idx, df.columns.get_loc(col)] != "NA":
+                        df.iloc[idx, df.columns.get_loc(col)] *= 1000
+                df.iloc[idx, df.columns.get_loc('Data instance')] = os.path.join(dataname, file)
+                
                 df.to_csv("results.csv", float_format='%.12f')
+                
+                df_copy = df.copy()
+                s = df_copy.style.format(subset=['Data instance'], escape="latex").format(subset=["$\overline{l}$", "$t_{clingo}$", "$t_{int}$", "$t_{alg}$", "$t_{asg}^{(d)}$", "$t_{asg}^{(s)}$"], thousands=",", precision=3).format(subset=['Data instance'], escape="latex").format(subset=['$m$', '$n$', '$k$', '$m\'$', '$n\'$', '$\eta_z$'], thousands=",").hide_index()
 
+                s.to_latex(
+                    "table.tex",
+                    column_format="l|rrrrrrr|rr|r|rr",
+                    hrules=True,
+                    multirow_align="t", multicol_align="r",
+                )  
 
 if __name__ == "__main__":
-    main2()
+    main()
