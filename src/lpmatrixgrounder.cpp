@@ -154,6 +154,8 @@ void printRule(std::vector<int> rule) {
 
 void printRules(std::vector<std::vector<int>> rules) { std::cout << rules; }
 
+// preallocating the buffer to be used in grounding
+char* cstr = new char[100'000'000];
 struct_ground_ret ground_return(ClingoGrounder& cgrounder) {
   auto start = std::chrono::high_resolution_clock::now();
   cgrounder.ground();
@@ -272,8 +274,8 @@ struct_ground_ret ground_return(ClingoGrounder& cgrounder) {
   ss << rules;
   const std::string my_str = ss.str();
   auto len = my_str.length();
-  char* cstr = new char[len - 1];
   strcpy(cstr, my_str.c_str());
+  cstr[len] = 0;
   auto duration = std::chrono::high_resolution_clock::now() - start;
   // std::cout << "Converting time = " << duration.count() << std::endl;
 
