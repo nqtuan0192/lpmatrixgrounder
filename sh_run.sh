@@ -1,3 +1,3 @@
 #!/bin/sh
 
-cd build ; ./testlpmatrixgrounder
+cd python ; python main.py

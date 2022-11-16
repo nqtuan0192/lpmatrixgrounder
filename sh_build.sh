@@ -1,3 +1,3 @@
 #!/bin/sh
 
-cmake --build build --verbose -j16
+cmake --build build --verbose -j$(nproc)
