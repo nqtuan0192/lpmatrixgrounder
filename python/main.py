@@ -9,6 +9,7 @@ from scipy import sparse
 import numpy as np
 import pandas as pd
 
+
 NEWATOM_PREFIX = "x_"
 KW_FACT = "FACT"
 KW_AND = "AND"
@@ -20,20 +21,6 @@ C_LPMAT = ctypes.CDLL('../build/liblpmatrixgrounder.so')
 
 def make_clist(lst):
     return (ctypes.c_char_p * len(lst))(*[x.encode() for x in lst])
-
-# filename = "../samples/example.lp".encode()
-# C_LPMAT.ground_single.argtypes = [ctypes.c_char_p]
-# C_LPMAT.ground_single.restype = ctypes.c_char_p
-# lp = C_LPMAT.ground_single(filename)
-
-# print(lp)
-
-# listof_files = ["../samples/model_graphcoloring.lp", "../samples/graph_6nodes.lp"]
-# C_LPMAT.ground_list.argtypes = [ctypes.POINTER(ctypes.c_char_p), ctypes.c_size_t]
-# C_LPMAT.ground_list.restype = ctypes.c_char_p
-# lp = C_LPMAT.ground_list(make_clist(listof_files), len(listof_files))
-
-# print(lp)
 
 
 def remapAtoms(atoms_mapping, atoms_mapping_negations, atoms_mapping_newatom):
@@ -68,7 +55,6 @@ def groundUsingClingo(filenames):
     C_LPMAT.ground_list.restype = grounder_ret
     ret_data = C_LPMAT.ground_list(make_clist(filenames), len(filenames))
     aspif = ret_data.rawdata
-    # print(aspif)
     rawdata = aspif.decode("utf-8").split("\n")
     start_time = time.time()
     ret = handle_aspif(rawdata)
@@ -76,21 +62,16 @@ def groundUsingClingo(filenames):
     return ret, duration, \
         ret_data.duration_clingo, \
         ret_data.duration_internal
-        
 
 
 def handle_aspif(rawdata):
-    # rules = dict()
     rules_mapped = dict()
-    # {0: ('OR', [...]), 1: ('FACT', [...]), 4: ('AND', [...]), 5: ('AND', [...])}
-
     introduced_atoms_counter = 1
     atoms_negation = set()
     atoms_introduced = set()
     atoms_max = 0
     original_rule_count = 0
     for line in rawdata:
-        # print(line)
         if "." not in line:
             continue
         original_rule_count += 1
@@ -108,7 +89,6 @@ def handle_aspif(rawdata):
                     atoms_max = head
         else:   # handle fact
             body = list()
-
         # update rule
         if head not in rules_mapped:
             if len(body) > 0:
@@ -119,17 +99,13 @@ def handle_aspif(rawdata):
 
     # identify mapping for negations
     atoms_negation = sorted(list(atoms_negation), reverse=True)
-    # print(atoms_max, atoms_negation)
     introduced_atoms_counter = atoms_max + 1
-    # rules_orginal = copy.deepcopy(rules_mapped)
 
     updated_rules = dict()
     for head, (ruletype, rulebodies) in rules_mapped.items():
-        # print(head, rulebodies)
         if len(rulebodies) > 1:
             for idx, body in enumerate(rulebodies):
                 if len(body) > 1:
-                    # print("introduce new atom for", body)
                     natom = introduced_atoms_counter
                     atoms_introduced.add(natom)
                     introduced_atoms_counter += 1
@@ -157,7 +133,8 @@ def handle_aspif(rawdata):
             if body != newbody:
                 rules_mapped[head][1][idx] = newbody
 
-    return rules_mapped, atoms_max, introduced_atoms_counter + len(atoms_negation), atoms_negation_mapped, original_rule_count
+    return rules_mapped, atoms_max, introduced_atoms_counter + len(atoms_negation), \
+        atoms_negation_mapped, original_rule_count
 
 
 def buildMatrixMapped(rules, n_atoms, atoms_negation):
@@ -257,16 +234,16 @@ def main2():
 
 def conductExperiment(inputfiles):
     start_time = time.time()
-    (rules, n_atoms_original, n_atoms,
-     atoms_negation, original_rule_count), duration_handle, duration_clingo, duration_internal = groundUsingClingo(inputfiles)
+    (rules, n_atoms_original, n_atoms, atoms_negation, original_rule_count), \
+        duration_handle, duration_clingo, duration_internal = groundUsingClingo(inputfiles)
     executation_groundtime = time.time() - start_time
+    
     print("Grounding time              :", executation_groundtime)
     print("---- duration_clingo        :", duration_clingo)
     print("---- duration_internal      :", duration_internal)
     print("---- duration_handle        :", duration_handle)
     print("---- overhead               :", executation_groundtime -
           duration_clingo - duration_internal - duration_handle)
-    # print(rules)
 
     start_time = time.time()
     try:
@@ -283,13 +260,11 @@ def conductExperiment(inputfiles):
     ms = buildMatrixMapped_sparse(rules, n_atoms, atoms_negation)
     executation_sparsematrix_time = time.time() - start_time
     print("Building sparse matrix time :", executation_sparsematrix_time)
-    # print(ms)
 
     start_time = time.time()
     ms, nnz = buildMatrixMapped_sparsefast(rules, n_atoms, atoms_negation)
     executation_sparsematrixfast_time = time.time() - start_time
     print("Building fast sparse time   :", executation_sparsematrixfast_time)
-    # print(ms)
 
     avg_array = []
     for head, (ruletype, rulebodies) in rules.items():
@@ -322,21 +297,20 @@ def conductExperiment(inputfiles):
         dense_matrix_time, sparse_matrix_fast_time
 
 
-
 def format_tex(number):
     return "$\\num{%d}$" % number
 
 
 def main():
-    df = pd.DataFrame(columns=['Data instance', '$m$', '$n$', '$k$', '$m\'$', '$n\'$', '$\overline{l}$', 
-                               '$\eta_z$', 
+    df = pd.DataFrame(columns=['Data instance', '$m$', '$n$', '$k$', '$m\'$', '$n\'$', '$\overline{l}$',
+                               '$\eta_z$',
                                '$t_{clingo}$', '$t_{int}$', '$t_{alg}$',
                                '$t_{asg}^{(d)}$', '$t_{asg}^{(s)}$'])
     datasets = dict({"3-Coloring": ("../experiments/datasets/", "3Coloring-Clasp.txt", "instances"),
-                     "HamiltonianCycle": ("../experiments/datasets/", "HamiltonianCycle-Clasp.txt", "instances"),
-                    #  "LatinSquares": ("../experiments/datasets/", "LatinSquares-Clasp.txt", "instances"),
-                    #  "NQueens": ("../experiments/datasets/", "queens-Clasp.txt", "instances"),
-                     "TransitiveClosure": ("../experiments/datasets/", "Reachability-Clasp.txt", "instances")
+                    #  "HamiltonianCycle": ("../experiments/datasets/", "HamiltonianCycle-Clasp.txt", "instances"),
+                     #  "LatinSquares": ("../experiments/datasets/", "LatinSquares-Clasp.txt", "instances"),
+                     #  "NQueens": ("../experiments/datasets/", "queens-Clasp.txt", "instances"),
+                     #  "TransitiveClosure": ("../experiments/datasets/", "Reachability-Clasp.txt", "instances")
                      })
     for dataname, (basedir, modelfile, instancedir) in datasets.items():
         modelfile = os.path.join(basedir, dataname, modelfile)
@@ -347,22 +321,28 @@ def main():
                 print("--- Processing:", modelfile, instancefile, "...")
                 idx = len(df.index)
                 df.loc[idx] = conductExperiment([modelfile, instancefile])
-                for col in ["$t_{clingo}$", "$t_{int}$", "$t_{alg}$", "$t_{asg}^{(d)}$", "$t_{asg}^{(s)}$"]:#range(8, 13):
+                # range(8, 13):
+                for col in ["$t_{clingo}$", "$t_{int}$", "$t_{alg}$", "$t_{asg}^{(d)}$", "$t_{asg}^{(s)}$"]:
                     if df.iloc[idx, df.columns.get_loc(col)] != "NA":
                         df.iloc[idx, df.columns.get_loc(col)] *= 1000
-                df.iloc[idx, df.columns.get_loc('Data instance')] = os.path.join(dataname, file)
-                
+                df.iloc[idx, df.columns.get_loc(
+                    'Data instance')] = os.path.join(dataname, file)
+
                 df.to_csv("results.csv", float_format='%.12f')
-                
+
                 df_copy = df.copy()
-                s = df_copy.style.format(subset=['Data instance'], escape="latex").format(subset=["$\overline{l}$", "$t_{clingo}$", "$t_{int}$", "$t_{alg}$", "$t_{asg}^{(d)}$", "$t_{asg}^{(s)}$"], thousands=",", precision=3).format(subset=['Data instance'], escape="latex").format(subset=['$m$', '$n$', '$k$', '$m\'$', '$n\'$', '$\eta_z$'], thousands=",").hide_index()
+                s = df_copy.style.format(subset=['Data instance'], escape="latex").\
+                    format(subset=["$\overline{l}$", "$t_{clingo}$", "$t_{int}$", "$t_{alg}$", "$t_{asg}^{(d)}$", "$t_{asg}^{(s)}$"], thousands=",", precision=3).\
+                    format(subset=['Data instance'], escape="latex").format(subset=[
+                        '$m$', '$n$', '$k$', '$m\'$', '$n\'$', '$\eta_z$'], thousands=",").hide_index()
 
                 s.to_latex(
                     "table.tex",
                     column_format="l|rrrrrrr|rr|r|rr",
                     hrules=True,
                     multirow_align="t", multicol_align="r",
-                )  
+                )
+
 
 if __name__ == "__main__":
     main()
